@@ -1,0 +1,2 @@
+add_executable(decision_service main.cpp)
+target_link_libraries(decision_service PRIVATE pvm_common)

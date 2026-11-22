@@ -1,0 +1,28 @@
+// Device tree overlay that declares the obstacle LED for the pvm_led driver.
+//
+// Build & load (on the Pi):
+//   dtc -@ -I dts -O dtb -o pvm-led.dtbo pvm-led-overlay.dts
+//   sudo cp pvm-led.dtbo /boot/firmware/overlays/     (older OS: /boot/overlays/)
+//   add "dtoverlay=pvm-led" to config.txt, reboot
+//   ls /proc/device-tree/  -> your node should appear
+//
+// TODO:
+//  - pick a free GPIO pin for the LED (check the Pi pinout + BCM2711 datasheet)
+//  - fill in the gpio controller reference and pin number below
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2711";
+
+    fragment@0 {
+        target-path = "/";
+        __overlay__ {
+            obstacle_led: obstacle-led {
+                compatible = "pvm,obstacle-led";   /* must match the driver */
+                /* led-gpios = <&gpio PIN_NUMBER FLAGS>;   TODO */
+                status = "okay";
+            };
+        };
+    };
+};
