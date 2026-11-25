@@ -2,3 +2,4 @@ build/
 compile_commands.json
 *.o
 .DS_Store
+tools/chardev_test/chardev_test
