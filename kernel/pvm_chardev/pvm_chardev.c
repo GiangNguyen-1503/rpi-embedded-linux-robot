@@ -20,6 +20,7 @@
 #include <linux/device.h>
 #include <linux/uaccess.h> //chua copy-user, copy_from_user
 #define PVM_BUF_SIZE 256
+#include <linux/mutex.h> //de pvm_buf va pvm_len khong bi nhieu tien trinh ghi lan vao nhau
 
 static dev_t dev_num;
 static struct cdev my_cdev;
@@ -27,6 +28,7 @@ static struct class *my_class;
 static struct device *my_device;
 static size_t pvm_len;
 static char pvm_buf[PVM_BUF_SIZE];
+static DEFINE_MUTEX(pvm_lock);
 
 //1.open
 static int open(struct inode *inode, struct file *file) {
@@ -42,26 +44,50 @@ static int release(struct inode *inode, struct file *file) {
 
 //3.read
 static ssize_t my_read(struct file *file, char __user *buffer, size_t len, loff_t *offset) {
+	ssize_t ret;	
 	size_t n;	
 	pr_info("device read, len %zu, offset %lld\n", len, *offset);	
-	if (*offset >= pvm_len)
-		return 0;
+	//khoa tu pvm-len/buf
+	if (mutex_lock_interruptible(&pvm_lock))
+		return -ERESTARTSYS;
+
+	if (*offset >= pvm_len) {
+		ret = 0;
+		goto out;
+	}	
 	n = min_t(size_t, len, pvm_len - *offset);
-	if (copy_to_user(buffer, pvm_buf + *offset, n) != 0)
-		return -EFAULT;
+	if (copy_to_user(buffer, pvm_buf + *offset, n) != 0) {
+		ret = -EFAULT;
+		goto out;
+	}
+	
 	*offset += n;
-	return n;
-}
- 
+	ret = n;
+
+out:
+	mutex_unlock(&pvm_lock);
+	return ret;
+} 
+
 //4.write
 static ssize_t my_write(struct file *file, const char __user *buffer, size_t len, loff_t *offset) {
+	ssize_t ret;
 	pr_info("device write\n");
 	if (len > PVM_BUF_SIZE)
 		return -ENOSPC;
-	if (copy_from_user(pvm_buf, buffer, len) != 0)
-		return -EFAULT;
+
+	//khoa
+	if (mutex_lock_interruptible(&pvm_lock))
+		return  -ERESTARTSYS;	
+	if (copy_from_user(pvm_buf, buffer, len) != 0) {
+		ret = -EFAULT;
+		goto out;
+	}	
 	pvm_len = len;
-	return len;	
+	ret = len;
+out:
+	mutex_unlock(&pvm_lock);
+	return ret;	
 }
 
 //file-operations
