@@ -4,3 +4,4 @@ compile_commands.json
 .DS_Store
 tools/chardev_test/chardev_test
 tools/gpio_regs/gpio_regs
+*.dtbo

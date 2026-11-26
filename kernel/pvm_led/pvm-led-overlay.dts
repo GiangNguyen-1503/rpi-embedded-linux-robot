@@ -8,7 +8,7 @@
 //
 // TODO:
 //  - pick a free GPIO pin for the LED (check the Pi pinout + BCM2711 datasheet)
-//  - fill in the gpio controller reference and pin number below
+
 /dts-v1/;
 /plugin/;
 
@@ -18,9 +18,9 @@
     fragment@0 {
         target-path = "/";
         __overlay__ {
-            obstacle_led: obstacle-led {
-                compatible = "pvm,obstacle-led";   /* must match the driver */
-                /* led-gpios = <&gpio PIN_NUMBER FLAGS>;   TODO */
+            pvm-led {
+                compatible = "pvm,pvm-led";
+                led-gpios = <&gpio 17 1>;
                 status = "okay";
             };
         };
